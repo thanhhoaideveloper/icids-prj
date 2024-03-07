@@ -5,11 +5,15 @@ import re
 import os
 from selenium.webdriver.common.keys import Keys
 import time
+import pandas as pd
+import requests
+import ast
+
 
 def get_keywords():
-    file_path = "keywords/keyword.txt"
+    file_path = "dataSource/keyword.txt"
     keywords = []
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding="utf-8") as file:
         for line in file.readlines():
             keywords.append(line.strip())
             
@@ -151,3 +155,35 @@ def init_header_request():
         "Cache-Control": "max-age=0",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
+
+def download_image(, images_url=[]):
+    headers = init_header_request()
+    if source == "csv":
+        # Read the CSV file
+        df = pd.read_csv('data/craw.csv')
+        # Iterate over each row
+        for index, row in df.iterrows():
+            images = ast.literal_eval(row['image_url'])
+            product_name = row['product_name']
+
+            # Create directory if not exists
+            folder_path = os.path.join('data/datasets', product_name)
+            os.makedirs(folder_path, exist_ok=True)
+            for url in images:
+                if(url is not None):
+                    download_image(url, folder_path, headers)
+    else:
+        # Create directory if not exists
+        folder_path = os.path.join('data/datasets', 'image_from_link')
+        os.makedirs(folder_path, exist_ok=True)
+        for url in images_url:
+            download_image(url, folder_path, headers)
+
+
+def download_image_from_url(url, folder_path, headers):
+    print(f"Download {url}...")
+    # Download the image
+    filename = os.path.join(folder_path, url.split('/')[-1])
+    response = requests.get(url, headers)
+    with open(filename, 'wb') as f:
+        f.write(response.content)

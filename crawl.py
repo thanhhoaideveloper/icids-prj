@@ -1,10 +1,8 @@
-from utils import get_keywords,fetch_url_detail, save_csv, process_coupang_images, convert_keyword_to_querystring, init_header_request, get_links
+from utils import get_keywords,fetch_url_detail, save_csv, process_coupang_images, convert_keyword_to_querystring, init_header_request, get_links, download_image
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import time
-from download_image import download_image
-
 
 def crawl_tool(type="keyword"):
     try:
@@ -21,7 +19,7 @@ def crawl_tool(type="keyword"):
                 # Tìm tất cả các thẻ <a> có class là "search-product-link"
                 search_product_links = soup.find_all("a", class_="search-product-link")
                 # Lấy 5 href từ các thẻ <a> đã tìm được
-                for i, link in enumerate(search_product_links[:10], 1):
+                for i, link in enumerate(search_product_links[:15], 1):
                     href = "https://www.coupang.com" + link.get("href")
                     image_url = process_coupang_images(href, headers, driver)
                     data.append({
@@ -35,6 +33,9 @@ def crawl_tool(type="keyword"):
             for link in links:
                 image_url = process_coupang_images(href, headers, driver)
                 time.sleep(10)
+                print("Waiting for image...")
+                download_image(source="link_detail", images_url=image_url)
+
         driver.quit()
 
     except Exception as e:
