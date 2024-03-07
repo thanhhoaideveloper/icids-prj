@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import requests
 import ast
+from utils import init_header_request
 
 def download_image(url, folder_path, headers):
     filename = os.path.join(folder_path, url.split('/')[-1])
@@ -10,13 +11,7 @@ def download_image(url, folder_path, headers):
         f.write(response.content)
 
 def main():
-    headers = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5",
-        "Cache-Control": "max-age=0",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    }
+    headers = init_header_request()
     # Read the CSV file
     df = pd.read_csv('data/craw.csv')
 

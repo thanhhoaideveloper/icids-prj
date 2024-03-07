@@ -3,7 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
-from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
 
@@ -35,21 +34,31 @@ def save_csv(data):
             writer.writerow(item)
     print("Writed CSV")
 
-def fetch_url_content(url, headers):
+def fetch_url_detail(url, headers):
     try:
-        driver.get(url)
-        # Wait for the dynamic content to load or for interactions
-        time.sleep(5)
-        # Now you can access the page source
-        html = driver.page_source
-        # Close the browser
-        time.sleep(5)
-        driver.quit()
-        return BeautifulSoup(html, 'html.parser')
+        response = requests.get(url, headers=headers, timeout=20)
+        response.raise_for_status()
+        return BeautifulSoup(response.text, 'html.parser')
     except requests.RequestException as e:
         print(f"Error:{str(e)}")
 
-def process_coupang_images(url, headers):
+def fetch_img_content(url, headers, driver):
+    print(f"Crawl url {url}")
+    # Open the webpage
+    driver.get(url)
+
+    # Wait for the dynamic content to load or for interactions
+    time.sleep(5)
+
+    # Now you can access the page source
+    html = driver.page_source
+
+    # Close the browser
+    time.sleep(5)
+    return BeautifulSoup(html, 'html.parser')
+
+
+def process_coupang_images(url, headers, driver):
     """
     Processes Coupang images from the given URL.
     Args:
@@ -60,7 +69,7 @@ def process_coupang_images(url, headers):
         list: List of processed image URLs.
     """
     try:
-        soup = fetch_url_content(url, headers)
+        soup = fetch_img_content(url, headers, driver)
         image_urls = extract_coupang_image_urls(soup)
         return [convert_to_coupang_image_url(url) for url in image_urls]
     except Exception as e:
@@ -77,8 +86,13 @@ def extract_coupang_image_urls(soup):
         list: List of extracted image URLs.
     """
     try:
-        divs = soup.find_all('div', class_='prod-image__item')
-        image_urls = [img['data-src'] for div in divs for img in div.find_all('img') if 'data-src' in img.attrs]
+        divs_primary = soup.find_all('div', class_='prod-image__item')
+        divs_content = soup.find_all('div', class_='subType-IMAGE')
+        image_urls = []
+        #Get imaage primary
+        image_urls += [img['data-src'] for div in divs_primary for img in div.find_all('img') if 'data-src' in img.attrs]
+        #Get image content
+        image_urls += [img['src'] for div in divs_content for img in div.find_all('img') if 'src' in img.attrs]
         return image_urls
     except Exception as e:
         print(str(e))
@@ -119,8 +133,21 @@ def format_image_name(folder_path):
 
     print("Rename successfully!")
 
+def get_links():
+    file_path = "dataSource/link_detail.txt"
+    links = []
+    with open(file_path, 'r') as file:
+        for line in file.readlines():
+            links.append(line.strip())
+            
+    file.close()
+    return links
 
-def init_browser():
-    # Initialize the WebDriver
-    driver = webdriver.Chrome()
-    return driver
+def init_header_request():
+    return {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5",
+        "Cache-Control": "max-age=0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    }
